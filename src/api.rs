@@ -1,9 +1,18 @@
+use std::sync::RwLock;
+use rocket::{serde::json::Json, get, http::Status};
 use super::Book;
-use rocket::{serde::json::Json, get};
+
+lazy_static! {
+    static ref BOOKS: RwLock<Vec<Book>> = RwLock::new(vec!(Book {title:String::from("A story")}));
+}
 
 #[get("/")]
-pub fn get_books() -> Json<Vec<Book>> {
-    let book_list = vec![Book{title: String::from("A story")}];
-
-    Json(book_list)
+pub fn books() -> (Status, Option<Json<Vec<Book>>>) {
+    
+    if let Ok(list) = BOOKS.read() {
+        (Status::Ok, Some(Json(list.clone())))
+    }
+    else {
+        (Status::InternalServerError, None)
+    }
 }
