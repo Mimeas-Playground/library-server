@@ -1,4 +1,4 @@
-use rocket::{Error, fs::{FileServer, relative}, serde::{Serialize, Deserialize}};
+use rocket::{fs::{FileServer, relative}, serde::{Serialize, Deserialize}};
 
 #[macro_use] extern crate rocket;
 
