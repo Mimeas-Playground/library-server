@@ -16,3 +16,14 @@ pub fn books() -> (Status, Option<Json<Vec<Book>>>) {
         (Status::InternalServerError, None)
     }
 }
+
+#[post("/", format="json", data="<book>")]
+pub fn add_book(book: Json<Book>) -> Status {
+    if let Ok(mut list) = BOOKS.write() {
+        list.push(book.0);
+        Status::Ok
+    }
+    else {
+        Status::InternalServerError
+    }
+}

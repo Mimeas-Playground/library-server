@@ -11,7 +11,7 @@ mod api;
 fn rocket() -> _{
    rocket::build()
     .mount("/", FileServer::from(relative!("web")))
-    .mount("/api", routes![api::books])
+    .mount("/api", routes![api::books, api::add_book])
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
