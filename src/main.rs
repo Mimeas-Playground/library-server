@@ -6,6 +6,7 @@ use rocket::{fs::{FileServer, relative}, serde::{Serialize, Deserialize}};
 #[cfg(test)]
 mod tests;
 mod api;
+mod data_store;
 
 #[launch]
 fn rocket() -> _{
