@@ -2,15 +2,36 @@
 #[macro_use] extern crate lazy_static;
 
 use std::net::{Ipv4Addr, IpAddr};
-use rocket::{fs::{FileServer, relative}, serde::{Serialize, Deserialize}, Config};
+use rocket::{fs::{FileServer, relative}, serde::{Serialize, Deserialize}, Config, Rocket, Build};
+use std::sync::RwLock;
+use anyhow::Result;
 
 #[cfg(test)]
 mod tests;
 mod api;
 mod data_store;
 
-#[launch]
-fn rocket() -> _{
+lazy_static! {
+    #[allow(clippy::or_fun_call)]
+    static ref BOOKS: RwLock<Vec<Book>> = RwLock::new(data_store::load().unwrap_or(vec![Book{title: String::from("Default book")}]));
+}
+
+#[main]
+async fn main() -> Result<()>{
+    let serv = rocket().launch().await;
+
+    if let Ok(books) = BOOKS.read() {
+        data_store::store(books.clone())?;
+    }
+
+    if let Err(err) = serv {
+        error!("Error: {:?}", err);
+    }
+
+    Ok(())
+}
+
+fn rocket() -> Rocket<Build> {
     let mut config: Config;
     #[cfg(debug_assertions)]
     {
@@ -25,7 +46,7 @@ fn rocket() -> _{
         config.address = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
     }
 
-   rocket::build()
+    rocket::build()
     .configure(config)
     .mount("/", FileServer::from(relative!("web")))
     .mount("/api", routes![api::books, api::add_book])

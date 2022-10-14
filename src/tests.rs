@@ -53,9 +53,14 @@ mod data_store {
 
     #[test]
     fn should_store_data() {
-        let result = store();
-        assert!(result.is_ok());
-        let loaded = load();
-        assert!(loaded.is_ok());
+        let result = store(vec![Book {title: String::from("A story")}]);
+        if result.is_err() {
+            panic!("{:?}", result)
+        }
+        if let Ok(loaded) = load() {
+            assert!(loaded.contains(&Book {title: String::from("A story")}));
+        } else {
+            panic!()
+        }
     }
 }
