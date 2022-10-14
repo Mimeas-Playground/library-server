@@ -4,3 +4,11 @@
   padding: 2rem;
   text-align: center;
 }
+
+ul.book {
+  padding: 0;
+}
+
+li.book {
+  list-style-type: none;
+}
