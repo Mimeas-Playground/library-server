@@ -4,31 +4,30 @@ mod api {
     use super::*;
     use crate::{api as endpoint, BOOKS};
 
-    use actix_web::{test, App, web};
+    use actix_web::{test, App};
 
     #[actix_web::test]
     async fn should_get_book() {
-        let book = Book { title: "The Hobbit".to_string() };
-
-        {
-            let mut books = BOOKS.write().unwrap();
-            books.clear();
-            books.push(book.clone());
-        }
+        let book = Book {
+            title: "The Hobbit".to_string()
+        };
+        // Ensures that the list has at least one element
+        BOOKS.write().unwrap().push(book.clone());
 
         let app = test::init_service(
             App::new()
-            .service(web::scope("/api")
                 .service(endpoint::books)
-            )
         ).await;
 
         let req = test::TestRequest::get()
-            .uri("/api/books")
+            .uri("/")
         .to_request();
-        
-        let response: Vec<Book> = test::call_and_read_body_json(&app, req).await;
-        assert!(response.contains(&book));
+
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+
+        let body: Vec<Book> = test::read_body_json(resp).await;
+        assert_eq!(body, BOOKS.read().unwrap().clone());
     }
 
     #[actix_web::test]
