@@ -1,4 +1,4 @@
-use std::{fs::File, path::PathBuf, io::{Write, BufReader}};
+use std::{fs::{File, create_dir_all}, path::PathBuf, io::{Write, BufReader}};
 
 use anyhow::Result;
 use rocket::{serde::json::serde_json, log::private::debug};
@@ -14,6 +14,7 @@ pub fn load() -> Result<Vec<Book>> {
 }
 
 pub fn store(data: Vec<Book>) -> Result<()> {
+    create_dir_all(PathBuf::from("storage"))?;
     let mut file = File::create(PathBuf::from("storage/db.json"))?;
     debug!("Storing data to: {:?}", file);
     file.write_all(serde_json::ser::to_string(&data)?.as_bytes())?;
