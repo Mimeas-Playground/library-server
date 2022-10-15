@@ -1,7 +1,6 @@
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate lazy_static;
 
-use std::net::{Ipv4Addr, IpAddr};
 use rocket::{fs::{FileServer, relative}, serde::{Serialize, Deserialize}, Config, Rocket, Build};
 use std::sync::RwLock;
 use anyhow::Result;
@@ -12,8 +11,13 @@ mod api;
 mod data_store;
 
 lazy_static! {
-    #[allow(clippy::or_fun_call)]
-    static ref BOOKS: RwLock<Vec<Book>> = RwLock::new(data_store::load().unwrap_or(vec![Book{title: String::from("Default book")}]));
+    static ref BOOKS: RwLock<Vec<Book>> = {
+        if let Ok(books) = data_store::load() {
+            RwLock::new(books)
+        } else {
+            RwLock::new(vec![Book{title: String::from("Default book")}])
+        }
+    };
 }
 
 #[main]
