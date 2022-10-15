@@ -17,7 +17,7 @@ function BookList() {
   function getBooks() {
     console.log("I run!")
 
-    fetch("/api")
+    fetch("/api/")
       .then(async (res) => {
         setBooks(await res.json())
       })
@@ -45,7 +45,7 @@ function BookForm(props: { update: (() => void) | null | undefined; }) {
 
   function submit(e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) {
     e.preventDefault();
-    fetch("/api", {
+    fetch("/api/", {
       method: "POST",
       headers: {
         'Content-Type': 'application/json'
