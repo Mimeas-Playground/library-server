@@ -1,7 +1,7 @@
 #[macro_use] extern crate lazy_static;
 
 use anyhow::Result;
-use serde::{Serialize, Deserialize};
+use serde_derive::{Serialize, Deserialize};
 use std::sync::RwLock;
 use actix_web::{HttpServer, web, App};
 use actix_files as fs;
