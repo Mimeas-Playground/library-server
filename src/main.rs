@@ -1,8 +1,8 @@
-#[macro_use] extern crate rocket;
 #[macro_use] extern crate lazy_static;
 
-use rocket::{fs::{FileServer, relative}, serde::{Serialize, Deserialize}, Config, Rocket, Build};
 use std::sync::RwLock;
+use actix_web::{HttpServer, Scope, web, App};
+use actix_files as fs;
 use anyhow::Result;
 
 #[cfg(test)]
@@ -20,40 +20,32 @@ lazy_static! {
     };
 }
 
-#[main]
+#[actix_web::main]
 async fn main() -> Result<()>{
-    let serv = rocket().launch().await;
 
-    if let Ok(books) = BOOKS.read() {
-        data_store::store(books.clone())?;
+    let books;
+    if let Ok(loaded) = data_store::load() {
+        books = loaded;
+    } else {
+        books = vec![Book{title: String::from("Default book")}]
     }
 
-    if let Err(err) = serv {
-        error!("Error: {:?}", err);
-    }
+    let server = HttpServer::new(
+        App::new()
+            .app_data(web::Data::new(RwLock::new(&mut books)))
+            .service(web::scope("/api")
+                .service(api::books)
+                .service(api::add_book)
+            )
+            .service(fs::Files::new("/", "./web").index_file("index.html"))
+        )
+        .bind(("0.0.0.0", 8080))?
+        .run()
+    .await;
+
+    data_store::store(books)?;
 
     Ok(())
-}
-
-fn rocket() -> Rocket<Build> {
-    let mut config: Config;
-    #[cfg(debug_assertions)]
-    {
-        config = rocket::Config::debug_default();
-        config.port = 8080;
-    }
-    #[cfg(not(debug_assertions))]
-    {
-        config = rocket::Config::release_default();
-        config.port = 0;
-        config.log_level = rocket::log::LogLevel::Normal;
-        config.address = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
-    }
-
-    rocket::build()
-    .configure(config)
-    .mount("/", FileServer::from(relative!("web")))
-    .mount("/api", routes![api::books, api::add_book])
 }
 
 

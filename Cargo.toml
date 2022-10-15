@@ -13,6 +13,7 @@ anyhow =  "1.0.65"
 thiserror = "1.0.37"
 # A fast web framework for Rust
 actix-web = "4.2.1"
+actix-files = "0.6.2"
 
 # A web server 0.2.2framework
 [dependencies.rocket]
