@@ -2,7 +2,7 @@ use crate::Book;
 
 mod api {
     use super::*;
-    use crate::api as endpoint;
+    use crate::{api as endpoint, BOOKS};
 
     use actix_web::{test, App, web};
 
@@ -42,12 +42,7 @@ mod api {
         assert!(response.status().is_success());
         
         //  Verify that book actually was added to server
-        let verify_req = test::TestRequest::get()
-            .uri("/")
-        .to_request();
-
-        let verify_response: Vec<Book> = test::call_and_read_body_json(&app, verify_req).await;
-        assert!(verify_response.contains(&book));
+        assert!(BOOKS.read().unwrap().contains(&book));
     }
 }
 
