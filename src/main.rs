@@ -14,6 +14,10 @@ mod data_store;
 #[tokio::main]
 async fn main() -> Result<()>{
 
+    if let Ok(books) = data_store::load() {
+        BOOKS.write().unwrap().extend(books);
+    }
+
     let server = HttpServer::new(|| {
         App::new()
             .service(web::scope("/api")
@@ -31,13 +35,7 @@ async fn main() -> Result<()>{
 }
 
 lazy_static! {
-    static ref BOOKS: RwLock<Vec<Book>> = {
-        if let Ok(books) = data_store::load() {
-            RwLock::new(books)
-        } else {
-            RwLock::new(vec![Book{title: String::from("Default book")}])
-        }
-    };
+    static ref BOOKS: RwLock<Vec<Book>> = RwLock::new(vec![]);
 }
 
 
