@@ -2,35 +2,51 @@ use crate::Book;
 
 mod api {
     use super::*;
-    use rocket::{local::blocking::Client, http::Status};
+    use crate::api as endpoint;
 
-    #[test]
-    fn should_get_book() {
-        let client = Client::tracked(crate::rocket()).unwrap();
-        let response = client.get("/api").dispatch();
-        assert_eq!(response.status(), Status::Ok);
+    use actix_web::{test, App, web};
 
-        if let Some(data) = response.into_json::<Vec<Book>>() {
-            assert!(data.contains(&Book{title:"A story".to_string()}))
-        }
-        else {panic!("response returned nothing")}
+    #[actix_web::test]
+    async fn should_get_book() {
+        let app = test::init_service(
+            App::new()
+                .route("/api", web::get().to(endpoint::books))
+        ).await;
+
+        let req = test::TestRequest::get()
+            .uri("/api/books")
+        .to_request();
+        
+        let response = test::call_service(&app, req).await;
+        assert!(response.status().is_success());
     }
 
-    #[test]
-    fn should_post_book() {
+    #[actix_web::test]
+    async fn should_post_book() {
         let book = Book {title:  String::from("A Post")};
 
-        let client = Client::tracked(crate::rocket()).unwrap();
-        let post_response = client.post("/api")
-            .json(&book)
-            .dispatch();
-        assert_eq!(post_response.status(), Status::Ok);
+        let app = test::init_service(
+            App::new()
+            .app_data(web::Data::new(RwLock::new(vec![book.clone()])))
+                .service(add_book)
+                .service(books)
+        ).await;
 
-        let get_response = client.get("/api").dispatch();
-        assert_eq!(get_response.status(), Status::Ok);
-        if let Some(data) = get_response.into_json::<Vec<Book>>() {
-            assert!(data.contains(&book))
-        } else {panic!("Got no data")}
+        let req = test::TestRequest::post()
+            .uri("/")
+            .set_json(&book)
+        .to_request();
+        
+        let response = test::call_service(&app, req).await;
+        assert!(response.status().is_success());
+        
+        //  Verify that book actually was added to server
+        let verify_req = test::TestRequest::get()
+            .uri("/")
+        .to_request();
+
+        let verify_response = test::call_and_read_body_json(&app, verify_req).await;
+        assert!(verify_response.contains(&book));
     }
 }
 
