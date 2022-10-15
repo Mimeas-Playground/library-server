@@ -1,14 +1,16 @@
-use std::{fs::{File, create_dir_all}, path::PathBuf, io::{Write, BufReader}};
+use std::{fs::{File, create_dir_all}, path::PathBuf, io::{Write, Read}};
 
 use anyhow::Result;
 use crate::Book;
 
 
 pub fn load() -> Result<Vec<Book>> {
-    let file = File::open(PathBuf::from("storage/db.json"))?;
-    let reader = BufReader::new(file);
+    let mut file = File::open(PathBuf::from("storage/db.json"))?;
+
+    let mut contents = vec![];
+    file.read_to_end(&mut contents)?;
     
-    let data = serde_json::from_reader(reader)?;
+    let data = serde_json::from_slice(&contents)?;
 
     Ok(data)
 }

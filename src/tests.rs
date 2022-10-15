@@ -8,6 +8,11 @@ mod api {
 
     #[actix_web::test]
     async fn should_get_book() {
+        let book = Book { title: "The Hobbit".to_string() };
+
+        BOOKS.write().unwrap()
+            .push(book.clone());
+
         let app = test::init_service(
             App::new()
             .service(web::scope("/api")
@@ -19,8 +24,8 @@ mod api {
             .uri("/api/books")
         .to_request();
         
-        let response = test::call_service(&app, req).await;
-        assert!(response.status().is_success());
+        let response: Vec<Book> = test::call_and_read_body_json(&app, req).await;
+        assert!(response.contains(&book));
     }
 
     #[actix_web::test]
@@ -53,14 +58,7 @@ mod data_store {
 
     #[test]
     fn should_load_stored_data() {
-        let loaded: Result<Vec<Book>> = load();
-        
-        if let Ok(data) = loaded {
-            assert!(!data.is_empty());
-        }
-        else {
-            panic!("{:?}", loaded)
-        }
+        assert!(load().is_ok());
     }
 
     #[test]
