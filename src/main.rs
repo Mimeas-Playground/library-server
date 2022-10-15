@@ -11,6 +11,25 @@ mod tests;
 mod api;
 mod data_store;
 
+#[tokio::main]
+async fn main() -> Result<()>{
+
+    let server = HttpServer::new(|| {
+        App::new()
+            .service(web::scope("/api")
+                .service(api::books)
+                .service(api::add_book)
+            )
+            .service(fs::Files::new("/", "./web").index_file("index.html"))
+    }).bind(("0.0.0.0", 8080))?
+    .run()
+    .await;
+
+    data_store::store(BOOKS.read().unwrap().clone())?;
+
+    server.map_err(|e| e.into())
+}
+
 lazy_static! {
     static ref BOOKS: RwLock<Vec<Book>> = {
         if let Ok(books) = data_store::load() {
@@ -19,34 +38,6 @@ lazy_static! {
             RwLock::new(vec![Book{title: String::from("Default book")}])
         }
     };
-}
-
-#[actix_web::main]
-async fn main() -> Result<()>{
-
-    let books;
-    if let Ok(loaded) = data_store::load() {
-        books = loaded;
-    } else {
-        books = vec![Book{title: String::from("Default book")}]
-    }
-
-    let server = HttpServer::new(
-        App::new()
-            .app_data(web::Data::new(RwLock::new(&mut books)))
-            .service(web::scope("/api")
-                .service(api::books)
-                .service(api::add_book)
-            )
-            .service(fs::Files::new("/", "./web").index_file("index.html"))
-        )
-        .bind(("0.0.0.0", 8080))?
-        .run()
-    .await;
-
-    data_store::store(books)?;
-
-    Ok(())
 }
 
 
