@@ -10,7 +10,9 @@ mod api {
     async fn should_get_book() {
         let app = test::init_service(
             App::new()
-                .route("/api", web::get().to(endpoint::books))
+            .service(web::scope("/api")
+                .service(endpoint::books)
+            )
         ).await;
 
         let req = test::TestRequest::get()
@@ -27,9 +29,8 @@ mod api {
 
         let app = test::init_service(
             App::new()
-            .app_data(web::Data::new(RwLock::new(vec![book.clone()])))
-                .service(add_book)
-                .service(books)
+                .service(endpoint::add_book)
+                .service(endpoint::books)
         ).await;
 
         let req = test::TestRequest::post()
@@ -45,7 +46,7 @@ mod api {
             .uri("/")
         .to_request();
 
-        let verify_response = test::call_and_read_body_json(&app, verify_req).await;
+        let verify_response: Vec<Book> = test::call_and_read_body_json(&app, verify_req).await;
         assert!(verify_response.contains(&book));
     }
 }
