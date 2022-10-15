@@ -1,24 +1,29 @@
-use rocket::{serde::json::Json, get, http::Status};
+use actix_web::{web, HttpResponse, get, post};
+
+use crate::BOOKS;
+
 use super::Book;
 
 #[get("/")]
-pub fn books() -> (Status, Option<Json<Vec<Book>>>) {
+pub async fn books() -> HttpResponse {
+
     
-    if let Ok(list) = crate::BOOKS.read() {
-        (Status::Ok, Some(Json(list.clone())))
+    if let Ok(list) = BOOKS.read() {
+        HttpResponse::Ok().json(list.clone())
     }
     else {
-        (Status::InternalServerError, None)
+        HttpResponse::InternalServerError().finish()
     }
 }
 
-#[post("/", format="json", data="<book>")]
-pub fn add_book(book: Json<Book>) -> Status {
-    if let Ok(mut list) = crate::BOOKS.write() {
-        list.push(book.0);
-        Status::Ok
+#[post("/")]
+pub async fn add_book(book: web::Json<Book>) -> HttpResponse {
+    if let Ok(mut list) = BOOKS.write() {
+        list.push(book.into_inner());
+
+        HttpResponse::Ok().finish()
     }
     else {
-        Status::InternalServerError
+        HttpResponse::InternalServerError().finish()
     }
 }

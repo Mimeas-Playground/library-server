@@ -2,53 +2,66 @@ use crate::Book;
 
 mod api {
     use super::*;
-    use rocket::{local::blocking::Client, http::Status};
+    use crate::{api as endpoint, BOOKS};
 
-    #[test]
-    fn should_get_book() {
-        let client = Client::tracked(crate::rocket()).unwrap();
-        let response = client.get("/api").dispatch();
-        assert_eq!(response.status(), Status::Ok);
+    use actix_web::{test, App};
 
-        if let Some(data) = response.into_json::<Vec<Book>>() {
-            assert!(data.contains(&Book{title:"A story".to_string()}))
-        }
-        else {panic!("response returned nothing")}
+    #[actix_web::test]
+    async fn should_get_book() {
+        let book = Book {
+            title: "The Hobbit".to_string()
+        };
+        // Ensures that the list has at least one element
+        BOOKS.write().unwrap().push(book.clone());
+
+        let app = test::init_service(
+            App::new()
+                .service(endpoint::books)
+        ).await;
+
+        let req = test::TestRequest::get()
+            .uri("/")
+        .to_request();
+
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+
+        let body: Vec<Book> = test::read_body_json(resp).await;
+        assert_eq!(body, BOOKS.read().unwrap().clone());
     }
 
-    #[test]
-    fn should_post_book() {
+    #[actix_web::test]
+    async fn should_post_book() {
         let book = Book {title:  String::from("A Post")};
 
-        let client = Client::tracked(crate::rocket()).unwrap();
-        let post_response = client.post("/api")
-            .json(&book)
-            .dispatch();
-        assert_eq!(post_response.status(), Status::Ok);
+        BOOKS.write().unwrap().clear();
 
-        let get_response = client.get("/api").dispatch();
-        assert_eq!(get_response.status(), Status::Ok);
-        if let Some(data) = get_response.into_json::<Vec<Book>>() {
-            assert!(data.contains(&book))
-        } else {panic!("Got no data")}
+        let app = test::init_service(
+            App::new()
+                .service(endpoint::add_book)
+                .service(endpoint::books)
+        ).await;
+
+        let req = test::TestRequest::post()
+            .uri("/")
+            .set_json(&book)
+        .to_request();
+        
+        let response = test::call_service(&app, req).await;
+        assert!(response.status().is_success());
+        
+        //  Verify that book actually was added to server
+        assert!(BOOKS.read().unwrap().contains(&book));
     }
 }
 
 mod data_store {
     use super::*;
-    use anyhow::Result;
     use crate::data_store::{load, store};
 
     #[test]
     fn should_load_stored_data() {
-        let loaded: Result<Vec<Book>> = load();
-        
-        if let Ok(data) = loaded {
-            assert!(!data.is_empty());
-        }
-        else {
-            panic!("{:?}", loaded)
-        }
+        assert!(load().is_ok());
     }
 
     #[test]
