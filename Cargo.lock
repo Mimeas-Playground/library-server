@@ -1361,6 +1361,8 @@ dependencies = [
  "anyhow",
  "lazy_static",
  "rocket",
+ "serde",
+ "serde_json",
  "thiserror",
 ]
 

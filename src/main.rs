@@ -1,9 +1,10 @@
 #[macro_use] extern crate lazy_static;
 
-use std::sync::RwLock;
-use actix_web::{HttpServer, Scope, web, App};
-use actix_files as fs;
 use anyhow::Result;
+use serde::{Serialize, Deserialize};
+use std::sync::RwLock;
+use actix_web::{HttpServer, web, App};
+use actix_files as fs;
 
 #[cfg(test)]
 mod tests;
@@ -50,7 +51,6 @@ async fn main() -> Result<()>{
 
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
-#[serde(crate="rocket::serde")]
 pub struct Book {
     pub title: String
 }
