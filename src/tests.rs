@@ -10,8 +10,11 @@ mod api {
     async fn should_get_book() {
         let book = Book { title: "The Hobbit".to_string() };
 
-        BOOKS.write().unwrap()
-            .push(book.clone());
+        {
+            let mut books = BOOKS.write().unwrap();
+            books.clear();
+            books.push(book.clone());
+        }
 
         let app = test::init_service(
             App::new()
@@ -31,6 +34,8 @@ mod api {
     #[actix_web::test]
     async fn should_post_book() {
         let book = Book {title:  String::from("A Post")};
+
+        BOOKS.write().unwrap().clear();
 
         let app = test::init_service(
             App::new()
@@ -53,7 +58,6 @@ mod api {
 
 mod data_store {
     use super::*;
-    use anyhow::Result;
     use crate::data_store::{load, store};
 
     #[test]

@@ -1,13 +1,14 @@
-use std::sync::RwLock;
-
 use actix_web::{web, HttpResponse, get, post};
+
+use crate::BOOKS;
 
 use super::Book;
 
 #[get("/")]
-pub async fn books(books: web::Data<RwLock<Vec<Book>>>) -> HttpResponse {
+pub async fn books() -> HttpResponse {
+
     
-    if let Ok(list) = books.read() {
+    if let Ok(list) = BOOKS.read() {
         HttpResponse::Ok().json(list.clone())
     }
     else {
@@ -16,8 +17,8 @@ pub async fn books(books: web::Data<RwLock<Vec<Book>>>) -> HttpResponse {
 }
 
 #[post("/")]
-pub async fn add_book(book: web::Json<Book>, book_list: web::Data<RwLock<Vec<Book>>>) -> HttpResponse {
-    if let Ok(mut list) = book_list.write() {
+pub async fn add_book(book: web::Json<Book>) -> HttpResponse {
+    if let Ok(mut list) = BOOKS.write() {
         list.push(book.into_inner());
 
         HttpResponse::Ok().finish()
